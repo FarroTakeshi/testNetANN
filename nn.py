@@ -53,7 +53,7 @@ def readCsv(fileName):
     y_values = y.values
 
     arr = []
-    for x in range(5):
+    for x in range(x_values.__len__()):
         arr.append([x_values[x], [y_values[x]]])
 
     return arr
@@ -155,7 +155,8 @@ class NN:
         for p in patterns:
             result = int(round(numpy.array(self.update(p[0])) * 1000.0))
             real_effort = int(numpy.array(p[1]) * 1000.0)
-            print(p[0], '->', result, 'Real Effort: ', real_effort, 'Error: ', abs((real_effort - result) * 100.0))
+            print(p[0], '->', result, 'Real Effort: ', real_effort,
+                  'Error: ' + str((abs(real_effort - result) / float(real_effort)) * 100.0) + '%')
 
     def weights(self):
         print('Input weights:')
@@ -189,24 +190,25 @@ class NN:
             self.wi[i] = hidden_trained[i]
         for j in range(output_trained.__len__()):
             self.wo[j] = output_trained[j]
-        estimation = self.update(inputs)
-        print ('Estimation ' + str(estimation) )
+        estimation = int(round(numpy.array(self.update(inputs)) * 1000.0))
+        print ('Estimation: ' + str(estimation))
 
 
 def demo():
     # Teach network XOR function
-    pat = readCsv('UCP_Dataset_test2_1')
+    pat_train = readCsv('UCP_Dataset_train_v2')
+    pat_test = readCsv('UCP_Dataset_test2_1')
     # pat = readCsv('UCP_Dataset_test2')
 
     # create a network with two input, two hidden, and one output nodes
     n = NN(8, 3, 1)
 
     # train it with some patterns
-    n.train(pat)
+    n.train(pat_train)
     # test it
-    n.test(pat)
+    n.test(pat_test)
     # test estimation
-    n.estimate([1, 1, 10, 9, 5, 1, 50, 13])
+    #n.estimate([1, 1, 10, 9, 5, 1, 50, 13])
 
 
 if __name__ == '__main__':
