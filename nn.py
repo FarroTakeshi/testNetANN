@@ -60,31 +60,38 @@ def readCsv(fileName):
 
 
 class NN:
-    def __init__(self, ni, nh, no):
+    def __init__(self, ni, nh1, nh2, no):
         # number of input, hidden, and output nodes
         self.ni = ni + 1  # +1 for bias node
-        self.nh = nh
+        self.nh1 = nh1
+        self.nh2 = nh2
         self.no = no
 
         # activations for nodes
         self.ai = [1.0] * self.ni
-        self.ah = [1.0] * self.nh
+        self.ah1 = [1.0] * self.nh1
+        self.ah2 = [1.0] * self.nh2
         self.ao = [1.0] * self.no
 
         # create weights
-        self.wi = makeMatrix(self.ni, self.nh)
-        self.wo = makeMatrix(self.nh, self.no)
+        self.wi = makeMatrix(self.ni, self.nh1)
+        self.wh = makeMatrix(self.nh1, self.nh2)
+        self.wo = makeMatrix(self.nh2, self.no)
         # set them to random vaules
         for i in range(self.ni):
-            for j in range(self.nh):
+            for j in range(self.nh1):
                 self.wi[i][j] = rand(-0.2, 0.2)
-        for j in range(self.nh):
-            for k in range(self.no):
-                self.wo[j][k] = rand(-2.0, 2.0)
+        for j in range(self.nh1):
+            for k in range(self.nh2):
+                self.wh[j][k] = rand(-0.2, 0.2)
+        for k in range(self.nh2):
+            for l in range(self.no):
+                self.wo[k][l] = rand(-2.0, 2.0)
 
         # last change in weights for momentum
-        self.ci = makeMatrix(self.ni, self.nh)
-        self.co = makeMatrix(self.nh, self.no)
+        self.ci = makeMatrix(self.ni, self.nh1)
+        self.ch = makeMatrix(self.nh1, self.nh2)
+        self.co = makeMatrix(self.nh2, self.no)
 
     def update(self, inputs):
         if len(inputs) != self.ni - 1:
@@ -96,18 +103,26 @@ class NN:
             #self.ai[i] = inputs[i]
 
         # hidden activations
-        for j in range(self.nh):
+        for j in range(self.nh1):
             sum = 0.0
             for i in range(self.ni):
                 sum = sum + self.ai[i] * self.wi[i][j]
-            self.ah[j] = sigmoid(sum)
+            self.ah1[j] = sigmoid(sum)
+            #self.ah[j] = leakrelu(sum)
+
+        # hidden activations
+        for j in range(self.nh2):
+            sum = 0.0
+            for i in range(self.nh1):
+                sum = sum + self.ah1[i] * self.wh[i][j]
+            self.ah2[j] = sigmoid(sum)
             #self.ah[j] = leakrelu(sum)
 
         # output activations
         for k in range(self.no):
             sum = 0.0
-            for j in range(self.nh):
-                sum = sum + self.ah[j] * self.wo[j][k]
+            for j in range(self.nh2):
+                sum = sum + self.ah2[j] * self.wo[j][k]
             #self.ao[k] = sigmoid(sum)
             self.ao[k] = relu(sum)
 
@@ -124,24 +139,39 @@ class NN:
             output_deltas[k] = drelu(self.ao[k]) * error
 
         # calculate error terms for hidden
-        hidden_deltas = [0.0] * self.nh
-        for j in range(self.nh):
+        hidden_deltas2 = [0.0] * self.nh2
+        for j in range(self.nh2):
             error = 0.0
             for k in range(self.no):
                 error = error + output_deltas[k] * self.wo[j][k]
-            hidden_deltas[j] = dsigmoid(self.ah[j]) * error
+            hidden_deltas2[j] = dsigmoid(self.ah2[j]) * error
+
+        # calculate error terms for hidden
+        hidden_deltas1 = [0.0] * self.nh1
+        for j in range(self.nh1):
+            error = 0.0
+            for k in range(self.no):
+                error = error + hidden_deltas2[k] * self.wh[j][k]
+            hidden_deltas1[j] = dsigmoid(self.ah1[j]) * error
 
         # update output weights
-        for j in range(self.nh):
+        for j in range(self.nh2):
             for k in range(self.no):
-                change = output_deltas[k] * self.ah[j]
+                change = output_deltas[k] * self.ah2[j]
                 self.wo[j][k] = self.wo[j][k] + N * change + M * self.co[j][k]
                 self.co[j][k] = change
 
         # update input weights
+        for i in range(self.nh1):
+            for j in range(self.nh2):
+                change = hidden_deltas2[j] * self.ah1[i]
+                self.wh[i][j] = self.wh[i][j] + N * change + M * self.ch[i][j]
+                self.ch[i][j] = change
+
+        # update input weights
         for i in range(self.ni):
-            for j in range(self.nh):
-                change = hidden_deltas[j] * self.ai[i]
+            for j in range(self.nh1):
+                change = hidden_deltas1[j] * self.ai[i]
                 self.wi[i][j] = self.wi[i][j] + N * change + M * self.ci[i][j]
                 self.ci[i][j] = change
 
@@ -163,8 +193,12 @@ class NN:
         for i in range(self.ni):
             print(self.wi[i])
         print()
+        print('Hidden weights:')
+        for j in range(self.nh1):
+            print(self.wh[j])
+        print()
         print('Output weights:')
-        for j in range(self.nh):
+        for j in range(self.nh2):
             print(self.wo[j])
 
     def train(self, patterns, iterations=1000, N=0.5, M=0.1):
@@ -180,35 +214,36 @@ class NN:
             if i % 100 == 0:
                 print('error %-.5f' % error)
 
-        rnaTraining.insertTraining(self.wi, self.wo, self.ni, self.nh, self.no)
+        rnaTraining.insertTraining(self.wi, self.wh, self.wo, self.ni, self.nh1, self.nh2, self.no)
 
     def estimate(self, inputs):
-        hidden_trained = rnaTraining.getHiddenWeights()
+        hidden1_trained = rnaTraining.getFirstHiddenWeights()
+        hidden2_trained = rnaTraining.getSecondHiddenWeights()
         output_trained = rnaTraining.getOutputWeights()
 
-        for i in range(hidden_trained.__len__()):
-            self.wi[i] = hidden_trained[i]
-        for j in range(output_trained.__len__()):
-            self.wo[j] = output_trained[j]
+        for i in range(hidden1_trained.__len__()):
+            self.wi[i] = hidden1_trained[i]
+        for j in range(hidden2_trained.__len__()):
+            self.wi[j] = hidden1_trained[j]
+        for k in range(output_trained.__len__()):
+            self.wo[k] = output_trained[k]
         estimation = int(round(numpy.array(self.update(inputs)) * 1000.0))
         print ('Estimation: ' + str(estimation))
 
 
 def demo():
-    # Teach network XOR function
     pat_train = readCsv('UCP_Dataset_train_v2')
     pat_test = readCsv('UCP_Dataset_test2_1')
-    # pat = readCsv('UCP_Dataset_test2')
 
     # create a network with two input, two hidden, and one output nodes
-    n = NN(8, 3, 1)
+    n = NN(8, 4, 2, 1)
 
     # train it with some patterns
     n.train(pat_train)
     # test it
     n.test(pat_test)
     # test estimation
-    #n.estimate([1, 1, 10, 9, 5, 1, 50, 13])
+    n.estimate([1, 1, 10, 9, 5, 1, 50, 13])
 
 
 if __name__ == '__main__':
