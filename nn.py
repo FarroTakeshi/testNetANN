@@ -186,7 +186,7 @@ class NN:
             result = int(round(numpy.array(self.update(p[0])) * 1000.0))
             real_effort = int(numpy.array(p[1]) * 1000.0)
             print(p[0], '->', result, 'Real Effort: ', real_effort,
-                  'Error: ' + str((abs(real_effort - result) / float(real_effort)) * 100.0) + '%')
+                  'Error: ' + str(((result - real_effort) / float(real_effort)) * 100.0) + '%')
 
     def weights(self):
         print('Input weights:')
@@ -201,7 +201,7 @@ class NN:
         for j in range(self.nh2):
             print(self.wo[j])
 
-    def train(self, patterns, iterations=1000, N=0.5, M=0.1):
+    def train(self, patterns, iterations=1000, N=0.5, M=0.9):
         # N: learning rate
         # M: momentum factor
         for i in range(iterations):
