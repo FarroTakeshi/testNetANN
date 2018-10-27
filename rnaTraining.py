@@ -39,13 +39,25 @@ def getTraining():
 
     return ans
 
-def getHiddenWeights():
+def getFirstHiddenWeights():
     training = getTraining()
     if training.__len__() > 0:
         mydb = support.configureDatabase();
 
         cursor = mydb.cursor()
-        cursor.execute("SELECT neuron1, neuron2, neuron3 FROM hidden_weights WHERE train_id = %s", (training[0][0],))
+        cursor.execute("SELECT neuron1, neuron2, neuron3, neuron4 FROM first_hidden_weights WHERE train_id = %s", (training[0][0],))
+
+        ans = cursor.fetchall()
+
+        return ans
+
+def getSecondHiddenWeights():
+    training = getTraining()
+    if training.__len__() > 0:
+        mydb = support.configureDatabase();
+
+        cursor = mydb.cursor()
+        cursor.execute("SELECT neuron1, neuron2 FROM second_hidden_weights WHERE train_id = %s", (training[0][0],))
 
         ans = cursor.fetchall()
 
@@ -63,7 +75,7 @@ def getOutputWeights():
 
         return ans
 
-def insertTraining(hidden_weights, output_weights, ni, nh, no):
+def insertTraining(first_hidden_weights, second_hidden_weights, output_weights, ni, nh1, nh2,  no):
     training = getTraining()
     if training.__len__() > 0:
         mydb = support.configureDatabase()
@@ -78,15 +90,28 @@ def insertTraining(hidden_weights, output_weights, ni, nh, no):
     train_id = insertDatabase(query, args)
 
     for i in range(ni):
-        query = "INSERT INTO hidden_weights(neuron1, neuron2, neuron3, train_id) " \
-                "VALUES(%s, %s, %s, %s)"
-        args = (hidden_weights[i][nh - 3], hidden_weights[i][nh - 2], hidden_weights[i][nh - 1], train_id)
+        query = "INSERT INTO first_hidden_weights(neuron1, neuron2, neuron3, neuron4, train_id) " \
+                "VALUES(%s, %s, %s, %s, %s)"
+        args = (first_hidden_weights[i][nh1 - 4],
+                first_hidden_weights[i][nh1 - 3],
+                first_hidden_weights[i][nh1 - 2],
+                first_hidden_weights[i][nh1 - 1],
+                train_id)
         hidden_weight_id = insertDatabase(query, args)
 
-    for j in range(nh):
+    for j in range(nh1):
+        query = "INSERT INTO second_hidden_weights(neuron1, neuron2, train_id) " \
+                "VALUES(%s, %s, %s)"
+        args = (second_hidden_weights[j][nh2 - 2],
+                second_hidden_weights[j][nh2 - 1],
+                train_id)
+        hidden_weight_id = insertDatabase(query, args)
+
+    for k in range(nh2):
         query = "INSERT INTO output_weights(neuron1, train_id) " \
                 "VALUES(%s, %s)"
-        args = (output_weights[j][no - 1], train_id)
+        args = (output_weights[k][no - 1],
+                train_id)
         output_weight_id = insertDatabase(query, args)
 
 
