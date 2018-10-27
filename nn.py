@@ -214,7 +214,7 @@ class NN:
             if i % 100 == 0:
                 print('error %-.5f' % error)
 
-        #rnaTraining.insertTraining(self.wi, self.wh, self.wo, self.ni, self.nh1, self.nh2, self.no)
+        rnaTraining.insertTraining(self.wi, self.wh, self.wo, self.ni, self.nh1, self.nh2, self.no)
 
     def estimate(self, inputs):
         hidden1_trained = rnaTraining.getFirstHiddenWeights()
@@ -224,11 +224,12 @@ class NN:
         for i in range(hidden1_trained.__len__()):
             self.wi[i] = hidden1_trained[i]
         for j in range(hidden2_trained.__len__()):
-            self.wi[j] = hidden1_trained[j]
+            self.wh[j] = hidden2_trained[j]
         for k in range(output_trained.__len__()):
             self.wo[k] = output_trained[k]
         estimation = int(round(numpy.array(self.update(inputs)) * 1000.0))
-        print ('Estimation: ' + str(estimation))
+        #print ('Estimation: ' + str(estimation))
+        return estimation
 
 
 def demo():
