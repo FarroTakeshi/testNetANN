@@ -201,7 +201,7 @@ class NN:
         for j in range(self.nh2):
             print(self.wo[j])
 
-    def train(self, patterns, iterations=1000, N=0.5, M=0.9):
+    def train(self, patterns, iterations=1000, N=0.5, M=0.1):
         # N: learning rate
         # M: momentum factor
         for i in range(iterations):
@@ -214,7 +214,7 @@ class NN:
             if i % 100 == 0:
                 print('error %-.5f' % error)
 
-        rnaTraining.insertTraining(self.wi, self.wh, self.wo, self.ni, self.nh1, self.nh2, self.no)
+        #rnaTraining.insertTraining(self.wi, self.wh, self.wo, self.ni, self.nh1, self.nh2, self.no)
 
     def estimate(self, inputs):
         hidden1_trained = rnaTraining.getFirstHiddenWeights()
@@ -232,8 +232,8 @@ class NN:
 
 
 def demo():
-    pat_train = readCsv('UCP_Dataset_train_v2')
-    pat_test = readCsv('UCP_Dataset_test2_1')
+    pat_train = readCsv('UCP_Dataset_train_v2_2')
+    pat_test = readCsv('UCP_Dataset_test2_2')
 
     # create a network with two input, two hidden, and one output nodes
     n = NN(8, 4, 2, 1)
@@ -243,7 +243,7 @@ def demo():
     # test it
     n.test(pat_test)
     # test estimation
-    n.estimate([1, 1, 10, 9, 5, 1, 50, 13])
+    #n.estimate([1, 1, 10, 9, 5, 1, 50, 13])
 
 
 if __name__ == '__main__':
